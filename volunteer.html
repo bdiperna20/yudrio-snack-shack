@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Volunteer Sign Up — Yudrio Snack Shack</title>
+<style>
+:root {
+  --primary: #1a3a5c;
+  --accent: #e8a735;
+  --accent-hover: #d4952e;
+  --bg: #f5f0e8;
+  --card: #ffffff;
+  --success: #27ae60;
+  --text: #2c3e50;
+  --text-light: #7f8c8d;
+  --border: #ddd;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+header {
+  background: var(--primary);
+  color: white;
+  padding: 1.5rem 2rem;
+  text-align: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+header svg { width: 56px; height: 56px; }
+header h1 { font-size: 1.4rem; margin-top: 0.5rem; }
+header span { font-size: 0.75rem; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
+header p { color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-top: 0.5rem; }
+
+.container { max-width: 500px; margin: 2rem auto; padding: 0 1.5rem; }
+
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 2rem;
+}
+
+.form-group { margin-bottom: 1.1rem; }
+.form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem; }
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+.form-group .hint { font-size: 0.75rem; color: var(--text-light); margin-top: 0.2rem; }
+
+.btn {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+  background: var(--accent);
+  color: var(--primary);
+  transition: background 0.15s;
+  margin-top: 0.5rem;
+}
+.btn:hover { background: var(--accent-hover); }
+
+.success-msg {
+  display: none;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+.success-msg svg { width: 64px; height: 64px; margin-bottom: 1rem; }
+.success-msg h2 { color: var(--success); margin-bottom: 0.5rem; }
+.success-msg p { color: var(--text-light); }
+.success-msg .btn { width: auto; padding: 0.6rem 1.5rem; margin-top: 1.5rem; display: inline-block; }
+
+.open-slots { margin-bottom: 1.5rem; }
+.open-slots h3 { font-size: 1rem; color: var(--primary); margin-bottom: 0.75rem; }
+.slot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #eee;
+  font-size: 0.9rem;
+}
+.slot:last-child { border: none; }
+.slot .date { font-weight: 600; }
+.slot .shift { color: var(--text-light); }
+.slot .count { background: var(--primary); color: white; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.75rem; }
+
+footer {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-light);
+  font-size: 0.8rem;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="24" cy="24" r="22" fill="#e8a735"/>
+    <path d="M12 30 Q16 14 24 14 Q32 14 36 30" stroke="#1a3a5c" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="18" cy="24" r="2" fill="#1a3a5c"/>
+    <circle cx="24" cy="20" r="2" fill="#1a3a5c"/>
+    <circle cx="30" cy="24" r="2" fill="#1a3a5c"/>
+    <line x1="12" y1="30" x2="36" y2="30" stroke="#1a3a5c" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M14 30 Q14 36 24 36 Q34 36 34 30" stroke="#1a3a5c" stroke-width="2.5" fill="none"/>
+  </svg>
+  <h1>Snack Shack Volunteer Sign Up</h1>
+  <span>Powered by Yudrio</span>
+  <p>Help us keep the snack shack running on game days!</p>
+</header>
+
+<div class="container">
+  <!-- Upcoming slots -->
+  <div class="open-slots card" id="open-slots" style="display:none">
+    <h3>Upcoming Game Days</h3>
+    <div id="slots-list"></div>
+  </div>
+
+  <!-- Signup form -->
+  <div class="card" id="signup-form">
+    <h3 style="color:var(--primary);margin-bottom:1.25rem;font-size:1.15rem">Sign Up to Volunteer</h3>
+    <div class="form-group">
+      <label>Your Name *</label>
+      <input id="v-name" placeholder="First and Last Name">
+    </div>
+    <div class="form-group">
+      <label>Date *</label>
+      <input id="v-date" type="date">
+      <div class="hint">Pick the game day you can help</div>
+    </div>
+    <div class="form-group">
+      <label>Shift *</label>
+      <select id="v-shift">
+        <option>Morning (9am-12pm)</option>
+        <option>Afternoon (12pm-3pm)</option>
+        <option>Evening (3pm-6pm)</option>
+        <option>Full Day</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Phone</label>
+      <input id="v-phone" type="tel" placeholder="(555) 123-4567">
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input id="v-email" type="email" placeholder="you@example.com">
+    </div>
+    <button class="btn" onclick="submitSignup()">Sign Me Up</button>
+  </div>
+
+  <!-- Success -->
+  <div class="card success-msg" id="success-msg">
+    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="32" r="30" fill="#27ae60"/>
+      <path d="M20 32 L28 40 L44 24" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <h2>You're signed up!</h2>
+    <p id="confirm-detail"></p>
+    <button class="btn" onclick="resetForm()">Sign Up for Another Day</button>
+  </div>
+</div>
+
+<footer>Yudrio Snack Shack &copy; 2026</footer>
+
+<script>
+const today = new Date().toISOString().slice(0, 10);
+document.getElementById('v-date').value = today;
+document.getElementById('v-date').min = today;
+
+function getVolunteers() {
+  try { return JSON.parse(localStorage.getItem('yss_volunteers')) || []; } catch { return []; }
+}
+function setVolunteers(v) { localStorage.setItem('yss_volunteers', JSON.stringify(v)); }
+
+function showUpcomingSlots() {
+  const vols = getVolunteers().filter(v => v.date >= today);
+  if (!vols.length) return;
+
+  const byDate = {};
+  vols.forEach(v => {
+    if (!byDate[v.date]) byDate[v.date] = [];
+    byDate[v.date].push(v);
+  });
+
+  const dates = Object.keys(byDate).sort();
+  document.getElementById('slots-list').innerHTML = dates.map(d => {
+    const count = byDate[d].length;
+    const shifts = [...new Set(byDate[d].map(v => v.shift))].join(', ');
+    return `<div class="slot"><div><span class="date">${formatDate(d)}</span> <span class="shift">— ${shifts}</span></div><span class="count">${count} signed up</span></div>`;
+  }).join('');
+  document.getElementById('open-slots').style.display = 'block';
+}
+
+function formatDate(d) {
+  const dt = new Date(d + 'T12:00:00');
+  return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function submitSignup() {
+  const name = document.getElementById('v-name').value.trim();
+  const date = document.getElementById('v-date').value;
+  const shift = document.getElementById('v-shift').value;
+  const phone = document.getElementById('v-phone').value.trim();
+  const email = document.getElementById('v-email').value.trim();
+
+  if (!name || !date) return alert('Please enter your name and pick a date.');
+
+  const vols = getVolunteers();
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  vols.push({ id, name, date, shift, phone, email });
+  setVolunteers(vols);
+
+  document.getElementById('signup-form').style.display = 'none';
+  document.getElementById('success-msg').style.display = 'block';
+  document.getElementById('confirm-detail').textContent =
+    `${name} — ${formatDate(date)}, ${shift}. Thank you for volunteering!`;
+
+  showUpcomingSlots();
+}
+
+function resetForm() {
+  document.getElementById('signup-form').style.display = 'block';
+  document.getElementById('success-msg').style.display = 'none';
+  document.getElementById('v-name').value = '';
+  document.getElementById('v-phone').value = '';
+  document.getElementById('v-email').value = '';
+  document.getElementById('v-date').value = today;
+}
+
+showUpcomingSlots();
+</script>
+</body>
+</html>
