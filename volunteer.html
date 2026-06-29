@@ -164,7 +164,7 @@ footer {
     </svg>
     <h2>You're signed up!</h2>
     <p id="confirm-detail"></p>
-    <button class="btn" onclick="resetForm()">Sign Up for Another Day</button>
+    <p style="margin-top:1rem;font-size:0.85rem;color:var(--text-light)">You've signed up for your shift. Thank you!</p>
   </div>
 </div>
 
@@ -214,9 +214,14 @@ function submitSignup() {
   if (!name || !date) return alert('Please enter your name and pick a date.');
 
   const vols = getVolunteers();
+
+  const taken = vols.find(v => v.date === date && v.shift === shift);
+  if (taken) return alert(`That shift is already taken by ${taken.name}. Please pick a different date or shift.`);
+
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   vols.push({ id, name, date, shift, phone, email });
   setVolunteers(vols);
+  localStorage.setItem('yss_volunteer_signed_up', 'true');
 
   document.getElementById('signup-form').style.display = 'none';
   document.getElementById('success-msg').style.display = 'block';
@@ -233,6 +238,12 @@ function resetForm() {
   document.getElementById('v-phone').value = '';
   document.getElementById('v-email').value = '';
   document.getElementById('v-date').value = today;
+}
+
+if (localStorage.getItem('yss_volunteer_signed_up')) {
+  document.getElementById('signup-form').style.display = 'none';
+  document.getElementById('success-msg').style.display = 'block';
+  document.getElementById('confirm-detail').textContent = 'You have already signed up.';
 }
 
 showUpcomingSlots();
