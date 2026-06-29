@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yudrio Snack Shack</title>
+<style>
+:root {
+  --primary: #1a3a5c;
+  --accent: #e8a735;
+  --accent-hover: #d4952e;
+  --bg: #f5f0e8;
+  --card: #ffffff;
+  --danger: #c0392b;
+  --success: #27ae60;
+  --text: #2c3e50;
+  --text-light: #7f8c8d;
+  --border: #ddd;
+  --shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+header {
+  background: var(--primary);
+  color: white;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+.logo { display: flex; align-items: center; gap: 0.75rem; }
+.logo svg { width: 48px; height: 48px; }
+.logo h1 { font-size: 1.5rem; letter-spacing: 1px; }
+.logo span { font-size: 0.8rem; color: var(--accent); display: block; letter-spacing: 2px; text-transform: uppercase; }
+
+nav { display: flex; gap: 0.25rem; }
+nav button {
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  border: none;
+  padding: 0.6rem 1.1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+nav button:hover { background: rgba(255,255,255,0.1); color: white; }
+nav button.active { background: var(--accent); color: var(--primary); font-weight: 700; }
+
+main { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
+
+.section { display: none; }
+.section.active { display: block; }
+
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.section-header h2 { font-size: 1.6rem; color: var(--primary); }
+
+.btn {
+  padding: 0.55rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.btn-primary { background: var(--accent); color: var(--primary); }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-danger { background: var(--danger); color: white; }
+.btn-danger:hover { opacity: 0.85; }
+.btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+
+.card {
+  background: var(--card);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+
+/* Menu */
+.menu-item { position: relative; }
+.menu-item h3 { color: var(--primary); margin-bottom: 0.25rem; }
+.menu-item .price { font-size: 1.3rem; font-weight: 700; color: var(--accent-hover); }
+.menu-item .category-badge {
+  display: inline-block;
+  background: var(--primary);
+  color: white;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+.menu-item .description { color: var(--text-light); font-size: 0.85rem; margin: 0.4rem 0; }
+.menu-actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+
+/* Inventory */
+.inv-item { display: flex; justify-content: space-between; align-items: center; }
+.inv-info h3 { font-size: 1rem; }
+.inv-info .inv-detail { font-size: 0.8rem; color: var(--text-light); }
+.inv-qty { display: flex; align-items: center; gap: 0.5rem; }
+.inv-qty span { font-size: 1.1rem; font-weight: 700; min-width: 2.5rem; text-align: center; }
+.low-stock { border-left: 4px solid var(--danger); }
+.ok-stock { border-left: 4px solid var(--success); }
+
+/* Volunteers */
+.vol-item h3 { font-size: 1rem; color: var(--primary); }
+.vol-item .vol-detail { font-size: 0.85rem; color: var(--text-light); margin: 0.3rem 0; }
+.vol-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+
+/* Sales */
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.stat-card { text-align: center; }
+.stat-card .stat-value { font-size: 2rem; font-weight: 700; color: var(--accent-hover); }
+.stat-card .stat-label { font-size: 0.8rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; }
+.sale-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #eee; }
+.sale-row:last-child { border: none; }
+
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  justify-content: center;
+  align-items: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+.modal h3 { margin-bottom: 1.25rem; color: var(--primary); font-size: 1.2rem; }
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem; color: var(--text); }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+.form-group textarea { resize: vertical; min-height: 60px; }
+.modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.25rem; }
+.btn-cancel { background: #eee; color: var(--text); }
+
+/* POS quick-sell */
+.pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; }
+.pos-btn {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 0.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pos-btn:hover { border-color: var(--accent); transform: translateY(-1px); }
+.pos-btn .pos-name { font-weight: 600; font-size: 0.9rem; }
+.pos-btn .pos-price { color: var(--accent-hover); font-weight: 700; }
+
+/* Dashboard */
+.dashboard-welcome { text-align: center; padding: 2rem 1rem; }
+.dashboard-welcome h2 { font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem; }
+.dashboard-welcome p { color: var(--text-light); }
+
+@media (max-width: 600px) {
+  header { flex-direction: column; gap: 0.75rem; padding: 1rem; }
+  nav { flex-wrap: wrap; justify-content: center; }
+  nav button { padding: 0.5rem 0.8rem; font-size: 0.8rem; }
+  .grid { grid-template-columns: 1fr; }
+  .pos-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="24" cy="24" r="22" fill="#e8a735"/>
+      <path d="M12 30 Q16 14 24 14 Q32 14 36 30" stroke="#1a3a5c" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="18" cy="24" r="2" fill="#1a3a5c"/>
+      <circle cx="24" cy="20" r="2" fill="#1a3a5c"/>
+      <circle cx="30" cy="24" r="2" fill="#1a3a5c"/>
+      <line x1="12" y1="30" x2="36" y2="30" stroke="#1a3a5c" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M14 30 Q14 36 24 36 Q34 36 34 30" stroke="#1a3a5c" stroke-width="2.5" fill="none"/>
+    </svg>
+    <div>
+      <h1>Snack Shack</h1>
+      <span>Powered by Yudrio</span>
+    </div>
+  </div>
+  <nav>
+    <button class="active" onclick="showSection('dashboard')">Dashboard</button>
+    <button onclick="showSection('menu')">Menu</button>
+    <button onclick="showSection('inventory')">Supplies</button>
+    <button onclick="showSection('sales')">Sales</button>
+    <button onclick="showSection('volunteers')">Volunteers</button>
+  </nav>
+</header>
+
+<main>
+  <!-- Dashboard -->
+  <div id="sec-dashboard" class="section active">
+    <div class="dashboard-welcome">
+      <h2>⚾ Welcome to the Snack Shack</h2>
+      <p>Manage your menu, track supplies, record sales, and coordinate volunteers.</p>
+    </div>
+    <div class="stats-row" id="dash-stats"></div>
+    <div class="section-header"><h2>Low Stock Alerts</h2></div>
+    <div id="dash-alerts"></div>
+    <div class="section-header" style="margin-top:1.5rem"><h2>Today's Volunteers</h2></div>
+    <div id="dash-volunteers"></div>
+  </div>
+
+  <!-- Menu -->
+  <div id="sec-menu" class="section">
+    <div class="section-header">
+      <h2>Menu</h2>
+      <button class="btn btn-primary" onclick="openModal('menu')">+ Add Item</button>
+    </div>
+    <div class="grid" id="menu-grid"></div>
+  </div>
+
+  <!-- Inventory -->
+  <div id="sec-inventory" class="section">
+    <div class="section-header">
+      <h2>Supply Inventory</h2>
+      <button class="btn btn-primary" onclick="openModal('inventory')">+ Add Supply</button>
+    </div>
+    <div id="inv-list"></div>
+  </div>
+
+  <!-- Sales -->
+  <div id="sec-sales" class="section">
+    <div class="section-header">
+      <h2>Quick Sell</h2>
+      <button class="btn btn-danger btn-sm" onclick="clearTodaySales()">Clear Today</button>
+    </div>
+    <div class="pos-grid" id="pos-grid"></div>
+    <div class="stats-row" id="sales-stats"></div>
+    <div class="section-header"><h2>Today's Sales</h2></div>
+    <div class="card" id="sales-log"></div>
+  </div>
+
+  <!-- Volunteers -->
+  <div id="sec-volunteers" class="section">
+    <div class="section-header">
+      <h2>Volunteer Schedule</h2>
+      <button class="btn btn-primary" onclick="openModal('volunteer')">+ Sign Up</button>
+    </div>
+    <div id="vol-list"></div>
+  </div>
+</main>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 id="modal-title"></h3>
+    <div id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modal-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DB = {
+  get(key, fallback = []) {
+    try { return JSON.parse(localStorage.getItem('yss_' + key)) || fallback; }
+    catch { return fallback; }
+  },
+  set(key, val) { localStorage.setItem('yss_' + key, JSON.stringify(val)); }
+};
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+// --- Data ---
+function getMenu() { return DB.get('menu'); }
+function setMenu(m) { DB.set('menu', m); }
+function getInventory() { return DB.get('inventory'); }
+function setInventory(i) { DB.set('inventory', i); }
+function getSales() { return DB.get('sales'); }
+function setSales(s) { DB.set('sales', s); }
+function getVolunteers() { return DB.get('volunteers'); }
+function setVolunteers(v) { DB.set('volunteers', v); }
+
+// Seed default menu if empty
+if (!getMenu().length) {
+  setMenu([
+    { id: uid(), name: 'Hot Dog', price: 3.00, category: 'Entree', description: 'Classic ballpark frank' },
+    { id: uid(), name: 'Nachos', price: 4.50, category: 'Entree', description: 'Chips with cheese sauce' },
+    { id: uid(), name: 'Popcorn', price: 2.50, category: 'Snack', description: 'Freshly popped' },
+    { id: uid(), name: 'Soft Pretzel', price: 3.00, category: 'Snack', description: 'Warm salted pretzel' },
+    { id: uid(), name: 'Candy Bar', price: 1.50, category: 'Snack', description: 'Assorted candy bars' },
+    { id: uid(), name: 'Soda', price: 2.00, category: 'Drink', description: 'Coke, Sprite, or Fanta' },
+    { id: uid(), name: 'Water', price: 1.00, category: 'Drink', description: 'Bottled water' },
+    { id: uid(), name: 'Gatorade', price: 2.50, category: 'Drink', description: 'Sports drink' },
+    { id: uid(), name: 'Ice Cream', price: 3.50, category: 'Snack', description: 'Assorted novelty bars' },
+  ]);
+}
+if (!getInventory().length) {
+  setInventory([
+    { id: uid(), name: 'Hot Dog Buns', qty: 48, unit: 'pack', minQty: 10 },
+    { id: uid(), name: 'Hot Dogs (franks)', qty: 48, unit: 'pack', minQty: 10 },
+    { id: uid(), name: 'Nacho Chips', qty: 20, unit: 'bags', minQty: 5 },
+    { id: uid(), name: 'Cheese Sauce', qty: 8, unit: 'cans', minQty: 3 },
+    { id: uid(), name: 'Popcorn Kernels', qty: 12, unit: 'bags', minQty: 4 },
+    { id: uid(), name: 'Soda (12-pack)', qty: 15, unit: 'cases', minQty: 5 },
+    { id: uid(), name: 'Water Bottles', qty: 30, unit: 'cases', minQty: 8 },
+    { id: uid(), name: 'Gatorade', qty: 10, unit: 'cases', minQty: 4 },
+    { id: uid(), name: 'Napkins', qty: 6, unit: 'packs', minQty: 3 },
+    { id: uid(), name: 'Condiments (ketchup/mustard)', qty: 12, unit: 'bottles', minQty: 4 },
+  ]);
+}
+
+// --- Sections ---
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  render();
+}
+
+// --- Render ---
+function render() {
+  renderDashboard();
+  renderMenu();
+  renderInventory();
+  renderSales();
+  renderVolunteers();
+}
+
+function renderDashboard() {
+  const today = new Date().toISOString().slice(0, 10);
+  const todaySales = getSales().filter(s => s.date === today);
+  const totalRev = todaySales.reduce((a, s) => a + s.price, 0);
+  const inv = getInventory();
+  const lowStock = inv.filter(i => i.qty <= i.minQty);
+  const vols = getVolunteers().filter(v => v.date === today);
+
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="card stat-card"><div class="stat-value">$${totalRev.toFixed(2)}</div><div class="stat-label">Today's Revenue</div></div>
+    <div class="card stat-card"><div class="stat-value">${todaySales.length}</div><div class="stat-label">Items Sold Today</div></div>
+    <div class="card stat-card"><div class="stat-value">${getMenu().length}</div><div class="stat-label">Menu Items</div></div>
+    <div class="card stat-card"><div class="stat-value">${lowStock.length}</div><div class="stat-label">Low Stock Items</div></div>
+  `;
+
+  document.getElementById('dash-alerts').innerHTML = lowStock.length
+    ? lowStock.map(i => `<div class="card low-stock inv-item"><div class="inv-info"><h3>${esc(i.name)}</h3><div class="inv-detail">${i.qty} ${esc(i.unit)} remaining (min: ${i.minQty})</div></div></div>`).join('')
+    : '<p style="color:var(--text-light)">All supplies are well stocked!</p>';
+
+  document.getElementById('dash-volunteers').innerHTML = vols.length
+    ? vols.map(v => `<div class="card"><strong>${esc(v.name)}</strong> — ${esc(v.shift)} <span style="color:var(--text-light)">(${esc(v.phone || 'no phone')})</span></div>`).join('')
+    : '<p style="color:var(--text-light)">No volunteers signed up for today.</p>';
+}
+
+function renderMenu() {
+  const menu = getMenu();
+  const cats = ['Entree', 'Snack', 'Drink'];
+  document.getElementById('menu-grid').innerHTML = cats.map(cat => {
+    const items = menu.filter(i => i.category === cat);
+    if (!items.length) return '';
+    return items.map(i => `
+      <div class="card menu-item">
+        <div class="category-badge">${esc(i.category)}</div>
+        <h3>${esc(i.name)}</h3>
+        <div class="description">${esc(i.description || '')}</div>
+        <div class="price">$${i.price.toFixed(2)}</div>
+        <div class="menu-actions">
+          <button class="btn btn-primary btn-sm" onclick="editMenuItem('${i.id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteMenuItem('${i.id}')">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  }).join('');
+}
+
+function renderInventory() {
+  const inv = getInventory();
+  document.getElementById('inv-list').innerHTML = inv.map(i => `
+    <div class="card ${i.qty <= i.minQty ? 'low-stock' : 'ok-stock'} inv-item">
+      <div class="inv-info">
+        <h3>${esc(i.name)}</h3>
+        <div class="inv-detail">${esc(i.unit)} · Min: ${i.minQty}</div>
+      </div>
+      <div class="inv-qty">
+        <button class="btn btn-sm btn-cancel" onclick="adjustQty('${i.id}', -1)">−</button>
+        <span>${i.qty}</span>
+        <button class="btn btn-sm btn-cancel" onclick="adjustQty('${i.id}', 1)">+</button>
+        <button class="btn btn-sm btn-primary" onclick="editInvItem('${i.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteInvItem('${i.id}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderSales() {
+  const menu = getMenu();
+  document.getElementById('pos-grid').innerHTML = menu.map(m => `
+    <div class="pos-btn" onclick="recordSale('${m.id}')">
+      <div class="pos-name">${esc(m.name)}</div>
+      <div class="pos-price">$${m.price.toFixed(2)}</div>
+    </div>
+  `).join('');
+
+  const today = new Date().toISOString().slice(0, 10);
+  const todaySales = getSales().filter(s => s.date === today);
+  const totalRev = todaySales.reduce((a, s) => a + s.price, 0);
+
+  document.getElementById('sales-stats').innerHTML = `
+    <div class="card stat-card"><div class="stat-value">$${totalRev.toFixed(2)}</div><div class="stat-label">Today's Total</div></div>
+    <div class="card stat-card"><div class="stat-value">${todaySales.length}</div><div class="stat-label">Items Sold</div></div>
+  `;
+
+  document.getElementById('sales-log').innerHTML = todaySales.length
+    ? todaySales.slice().reverse().map(s => `
+      <div class="sale-row">
+        <div><strong>${esc(s.name)}</strong> <span style="color:var(--text-light)">${s.time}</span></div>
+        <div style="font-weight:700;color:var(--accent-hover)">$${s.price.toFixed(2)}</div>
+      </div>
+    `).join('')
+    : '<p style="color:var(--text-light);padding:0.5rem 0">No sales recorded today.</p>';
+}
+
+function renderVolunteers() {
+  const vols = getVolunteers();
+  const today = new Date().toISOString().slice(0, 10);
+  const upcoming = vols.filter(v => v.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+  const past = vols.filter(v => v.date < today).sort((a, b) => b.date.localeCompare(a.date));
+
+  const renderList = (list) => list.map(v => `
+    <div class="card vol-item">
+      <h3>${esc(v.name)}</h3>
+      <div class="vol-detail">${esc(v.date)} · ${esc(v.shift)}</div>
+      <div class="vol-detail">${esc(v.phone || '')} ${esc(v.email || '')}</div>
+      <div class="vol-actions">
+        <button class="btn btn-danger btn-sm" onclick="deleteVolunteer('${v.id}')">Remove</button>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('vol-list').innerHTML =
+    '<h3 style="margin-bottom:0.75rem;color:var(--primary)">Upcoming</h3>' +
+    (upcoming.length ? renderList(upcoming) : '<p style="color:var(--text-light);margin-bottom:1rem">No upcoming volunteers.</p>') +
+    '<h3 style="margin:1.25rem 0 0.75rem;color:var(--text-light)">Past</h3>' +
+    (past.length ? renderList(past) : '<p style="color:var(--text-light)">None.</p>');
+}
+
+// --- Actions ---
+function recordSale(menuId) {
+  const menu = getMenu();
+  const item = menu.find(m => m.id === menuId);
+  if (!item) return;
+  const sales = getSales();
+  const now = new Date();
+  sales.push({
+    id: uid(),
+    menuId: item.id,
+    name: item.name,
+    price: item.price,
+    date: now.toISOString().slice(0, 10),
+    time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+  setSales(sales);
+  render();
+}
+
+function clearTodaySales() {
+  if (!confirm('Clear all of today\'s sales?')) return;
+  const today = new Date().toISOString().slice(0, 10);
+  setSales(getSales().filter(s => s.date !== today));
+  render();
+}
+
+function adjustQty(id, delta) {
+  const inv = getInventory();
+  const item = inv.find(i => i.id === id);
+  if (item) { item.qty = Math.max(0, item.qty + delta); setInventory(inv); render(); }
+}
+
+function deleteMenuItem(id) {
+  if (!confirm('Delete this menu item?')) return;
+  setMenu(getMenu().filter(m => m.id !== id));
+  render();
+}
+
+function deleteInvItem(id) {
+  if (!confirm('Delete this supply item?')) return;
+  setInventory(getInventory().filter(i => i.id !== id));
+  render();
+}
+
+function deleteVolunteer(id) {
+  if (!confirm('Remove this volunteer?')) return;
+  setVolunteers(getVolunteers().filter(v => v.id !== id));
+  render();
+}
+
+// --- Modals ---
+function openModal(type, editId) {
+  const overlay = document.getElementById('modal-overlay');
+  const title = document.getElementById('modal-title');
+  const body = document.getElementById('modal-body');
+  const saveBtn = document.getElementById('modal-save');
+
+  if (type === 'menu') {
+    const item = editId ? getMenu().find(m => m.id === editId) : null;
+    title.textContent = item ? 'Edit Menu Item' : 'Add Menu Item';
+    body.innerHTML = `
+      <div class="form-group"><label>Name</label><input id="f-name" value="${esc(item?.name || '')}"></div>
+      <div class="form-group"><label>Price ($)</label><input id="f-price" type="number" step="0.25" min="0" value="${item?.price || ''}"></div>
+      <div class="form-group"><label>Category</label>
+        <select id="f-cat"><option ${item?.category === 'Entree' ? 'selected' : ''}>Entree</option><option ${item?.category === 'Snack' ? 'selected' : ''}>Snack</option><option ${item?.category === 'Drink' ? 'selected' : ''}>Drink</option></select>
+      </div>
+      <div class="form-group"><label>Description</label><textarea id="f-desc">${esc(item?.description || '')}</textarea></div>
+    `;
+    saveBtn.onclick = () => {
+      const name = document.getElementById('f-name').value.trim();
+      const price = parseFloat(document.getElementById('f-price').value);
+      if (!name || isNaN(price)) return alert('Name and price are required.');
+      const menu = getMenu();
+      if (item) {
+        Object.assign(item, { name, price, category: document.getElementById('f-cat').value, description: document.getElementById('f-desc').value.trim() });
+      } else {
+        menu.push({ id: uid(), name, price, category: document.getElementById('f-cat').value, description: document.getElementById('f-desc').value.trim() });
+      }
+      setMenu(menu);
+      closeModal();
+      render();
+    };
+  } else if (type === 'inventory') {
+    const item = editId ? getInventory().find(i => i.id === editId) : null;
+    title.textContent = item ? 'Edit Supply' : 'Add Supply';
+    body.innerHTML = `
+      <div class="form-group"><label>Item Name</label><input id="f-name" value="${esc(item?.name || '')}"></div>
+      <div class="form-group"><label>Quantity</label><input id="f-qty" type="number" min="0" value="${item?.qty ?? ''}"></div>
+      <div class="form-group"><label>Unit</label><input id="f-unit" placeholder="e.g. packs, cases, bottles" value="${esc(item?.unit || '')}"></div>
+      <div class="form-group"><label>Minimum Quantity (low stock alert)</label><input id="f-min" type="number" min="0" value="${item?.minQty ?? 5}"></div>
+    `;
+    saveBtn.onclick = () => {
+      const name = document.getElementById('f-name').value.trim();
+      const qty = parseInt(document.getElementById('f-qty').value);
+      if (!name || isNaN(qty)) return alert('Name and quantity are required.');
+      const inv = getInventory();
+      const obj = { name, qty, unit: document.getElementById('f-unit').value.trim() || 'units', minQty: parseInt(document.getElementById('f-min').value) || 5 };
+      if (item) { Object.assign(item, obj); } else { inv.push({ id: uid(), ...obj }); }
+      setInventory(inv);
+      closeModal();
+      render();
+    };
+  } else if (type === 'volunteer') {
+    title.textContent = 'Volunteer Sign Up';
+    const today = new Date().toISOString().slice(0, 10);
+    body.innerHTML = `
+      <div class="form-group"><label>Name</label><input id="f-name"></div>
+      <div class="form-group"><label>Date</label><input id="f-date" type="date" value="${today}"></div>
+      <div class="form-group"><label>Shift</label>
+        <select id="f-shift"><option>Morning (9am-12pm)</option><option>Afternoon (12pm-3pm)</option><option>Evening (3pm-6pm)</option><option>Full Day</option></select>
+      </div>
+      <div class="form-group"><label>Phone</label><input id="f-phone" type="tel"></div>
+      <div class="form-group"><label>Email</label><input id="f-email" type="email"></div>
+    `;
+    saveBtn.onclick = () => {
+      const name = document.getElementById('f-name').value.trim();
+      const date = document.getElementById('f-date').value;
+      if (!name || !date) return alert('Name and date are required.');
+      const vols = getVolunteers();
+      vols.push({ id: uid(), name, date, shift: document.getElementById('f-shift').value, phone: document.getElementById('f-phone').value.trim(), email: document.getElementById('f-email').value.trim() });
+      setVolunteers(vols);
+      closeModal();
+      render();
+    };
+  }
+  overlay.classList.add('show');
+}
+
+function closeModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+
+function editMenuItem(id) { openModal('menu', id); }
+function editInvItem(id) { openModal('inventory', id); }
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+render();
+</script>
+</body>
+</html>
