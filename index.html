@@ -175,6 +175,39 @@ main { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
 .dashboard-welcome h2 { font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem; }
 .dashboard-welcome p { color: var(--text-light); }
 
+/* Login */
+.login-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: var(--primary);
+}
+.login-box {
+  background: white;
+  border-radius: 16px;
+  padding: 2.5rem;
+  width: 90%;
+  max-width: 380px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  text-align: center;
+}
+.login-box .logo-login { margin-bottom: 1.5rem; }
+.login-box .logo-login svg { width: 64px; height: 64px; }
+.login-box .logo-login h2 { color: var(--primary); margin-top: 0.5rem; }
+.login-box .logo-login span { color: var(--accent-hover); font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; }
+.login-box .form-group { text-align: left; }
+.login-box .btn-primary { width: 100%; padding: 0.7rem; font-size: 1rem; margin-top: 0.5rem; }
+.login-error { color: var(--danger); font-size: 0.85rem; margin-top: 0.5rem; display: none; }
+.user-info { display: flex; align-items: center; gap: 0.75rem; }
+.user-info span { font-size: 0.85rem; color: rgba(255,255,255,0.8); }
+.btn-logout { background: rgba(255,255,255,0.15); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 5px; cursor: pointer; font-size: 0.8rem; }
+.btn-logout:hover { background: rgba(255,255,255,0.25); }
+.btn-manage-users { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); border: none; padding: 0.4rem 0.8rem; border-radius: 5px; cursor: pointer; font-size: 0.8rem; }
+.btn-manage-users:hover { background: rgba(255,255,255,0.2); color: white; }
+.app-wrap { display: none; }
+.app-wrap.show { display: block; }
+
 @media (max-width: 600px) {
   header { flex-direction: column; gap: 0.75rem; padding: 1rem; }
   nav { flex-wrap: wrap; justify-content: center; }
@@ -186,6 +219,31 @@ main { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
 </head>
 <body>
 
+<!-- Login Screen -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="logo-login">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="24" cy="24" r="22" fill="#e8a735"/>
+        <path d="M12 30 Q16 14 24 14 Q32 14 36 30" stroke="#1a3a5c" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="18" cy="24" r="2" fill="#1a3a5c"/>
+        <circle cx="24" cy="20" r="2" fill="#1a3a5c"/>
+        <circle cx="30" cy="24" r="2" fill="#1a3a5c"/>
+        <line x1="12" y1="30" x2="36" y2="30" stroke="#1a3a5c" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M14 30 Q14 36 24 36 Q34 36 34 30" stroke="#1a3a5c" stroke-width="2.5" fill="none"/>
+      </svg>
+      <h2>Snack Shack</h2>
+      <span>Powered by Yudrio</span>
+    </div>
+    <div class="form-group"><label>Username</label><input id="login-user" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="form-group"><label>Password</label><input id="login-pass" type="password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="login-error">Invalid username or password.</div>
+  </div>
+</div>
+
+<!-- App -->
+<div class="app-wrap" id="app-wrap">
 <header>
   <div class="logo">
     <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -209,6 +267,11 @@ main { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
     <button onclick="showSection('sales')">Sales</button>
     <button onclick="showSection('volunteers')">Volunteers</button>
   </nav>
+  <div class="user-info">
+    <span id="user-display"></span>
+    <button class="btn-manage-users" onclick="openModal('users')">Users</button>
+    <button class="btn-logout" onclick="doLogout()">Log Out</button>
+  </div>
 </header>
 
 <main>
@@ -265,6 +328,8 @@ main { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
   </div>
 </main>
 
+</div><!-- /app-wrap -->
+
 <!-- Modal -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
@@ -278,6 +343,53 @@ main { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; }
 </div>
 
 <script>
+// --- Auth ---
+function getUsers() {
+  try { return JSON.parse(localStorage.getItem('yss_users')) || null; } catch { return null; }
+}
+function setUsers(u) { localStorage.setItem('yss_users', JSON.stringify(u)); }
+
+if (!getUsers()) {
+  setUsers([{ username: 'admin', password: 'snackshack', role: 'admin' }]);
+}
+
+function doLogin() {
+  const username = document.getElementById('login-user').value.trim().toLowerCase();
+  const password = document.getElementById('login-pass').value;
+  const users = getUsers();
+  const user = users.find(u => u.username.toLowerCase() === username && u.password === password);
+  if (user) {
+    sessionStorage.setItem('yss_session', JSON.stringify(user));
+    showApp();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('yss_session');
+  document.getElementById('app-wrap').classList.remove('show');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-error').style.display = 'none';
+}
+
+function showApp() {
+  const user = JSON.parse(sessionStorage.getItem('yss_session'));
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-wrap').classList.add('show');
+  document.getElementById('user-display').textContent = user.username;
+  render();
+}
+
+function getCurrentUser() {
+  try { return JSON.parse(sessionStorage.getItem('yss_session')); } catch { return null; }
+}
+
+// Check session on load
+if (getCurrentUser()) { showApp(); }
+
 const DB = {
   get(key, fallback = []) {
     try { return JSON.parse(localStorage.getItem('yss_' + key)) || fallback; }
@@ -586,6 +698,38 @@ function openModal(type, editId) {
       render();
     };
   }
+  else if (type === 'users') {
+    const cur = getCurrentUser();
+    if (cur.role !== 'admin') { alert('Only admins can manage users.'); return; }
+    title.textContent = 'Manage Users';
+    const users = getUsers();
+    body.innerHTML = `
+      <div id="user-list">${users.map(u => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid #eee">
+          <div><strong>${esc(u.username)}</strong> <span style="color:var(--text-light);font-size:0.8rem">(${u.role})</span></div>
+          ${u.username !== 'admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteUser('${esc(u.username)}')">Remove</button>` : ''}
+        </div>
+      `).join('')}</div>
+      <hr style="margin:1rem 0">
+      <h4 style="margin-bottom:0.75rem;color:var(--primary)">Add New User</h4>
+      <div class="form-group"><label>Username</label><input id="f-newuser"></div>
+      <div class="form-group"><label>Password</label><input id="f-newpass" type="password"></div>
+      <div class="form-group"><label>Role</label>
+        <select id="f-newrole"><option value="volunteer">Volunteer</option><option value="admin">Admin</option></select>
+      </div>
+    `;
+    saveBtn.onclick = () => {
+      const uname = document.getElementById('f-newuser').value.trim();
+      const pass = document.getElementById('f-newpass').value;
+      if (!uname || !pass) return alert('Username and password are required.');
+      const users = getUsers();
+      if (users.find(u => u.username.toLowerCase() === uname.toLowerCase())) return alert('Username already exists.');
+      users.push({ username: uname, password: pass, role: document.getElementById('f-newrole').value });
+      setUsers(users);
+      closeModal();
+    };
+  }
+
   overlay.classList.add('show');
 }
 
@@ -597,9 +741,15 @@ function closeModal(e) {
 function editMenuItem(id) { openModal('menu', id); }
 function editInvItem(id) { openModal('inventory', id); }
 
+function deleteUser(username) {
+  if (!confirm('Remove user "' + username + '"?')) return;
+  setUsers(getUsers().filter(u => u.username !== username));
+  openModal('users');
+}
+
 function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
 
-render();
+if (getCurrentUser()) { render(); }
 </script>
 </body>
 </html>
