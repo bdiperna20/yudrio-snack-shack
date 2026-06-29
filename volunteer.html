@@ -171,32 +171,56 @@ footer {
 <footer>Yudrio Snack Shack &copy; 2026</footer>
 
 <script>
+const SUPABASE_URL = 'https://djxmlwojxjlwxgnpylym.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqeG1sd29qeGpsd3hnbnB5bHltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MTU5MjUsImV4cCI6MjA5ODI5MTkyNX0.Ok6Gv2nm-5PFRf-HMw5OJJ0vuH-gwFOOTWklOSVpeMc';
+
 const today = new Date().toISOString().slice(0, 10);
 document.getElementById('v-date').value = today;
 document.getElementById('v-date').min = today;
 
-function getVolunteers() {
-  try { return JSON.parse(localStorage.getItem('yss_volunteers')) || []; } catch { return []; }
-}
-function setVolunteers(v) { localStorage.setItem('yss_volunteers', JSON.stringify(v)); }
-
-function showUpcomingSlots() {
-  const vols = getVolunteers().filter(v => v.date >= today);
-  if (!vols.length) return;
-
-  const byDate = {};
-  vols.forEach(v => {
-    if (!byDate[v.date]) byDate[v.date] = [];
-    byDate[v.date].push(v);
+async function sbFetch(path, options = {}) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+    ...options,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': options.prefer || 'return=representation',
+      ...options.headers
+    }
   });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || res.statusText);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
 
-  const dates = Object.keys(byDate).sort();
-  document.getElementById('slots-list').innerHTML = dates.map(d => {
-    const count = byDate[d].length;
-    const shifts = [...new Set(byDate[d].map(v => v.shift))].join(', ');
-    return `<div class="slot"><div><span class="date">${formatDate(d)}</span> <span class="shift">— ${shifts}</span></div><span class="count">${count} signed up</span></div>`;
-  }).join('');
-  document.getElementById('open-slots').style.display = 'block';
+async function getVolunteers() {
+  return sbFetch('volunteers?select=*&order=date.asc');
+}
+
+async function showUpcomingSlots() {
+  try {
+    const vols = await getVolunteers();
+    const upcoming = vols.filter(v => v.date >= today);
+    if (!upcoming.length) return;
+
+    const byDate = {};
+    upcoming.forEach(v => {
+      if (!byDate[v.date]) byDate[v.date] = [];
+      byDate[v.date].push(v);
+    });
+
+    const dates = Object.keys(byDate).sort();
+    document.getElementById('slots-list').innerHTML = dates.map(d => {
+      const count = byDate[d].length;
+      const shifts = [...new Set(byDate[d].map(v => v.shift))].join(', ');
+      return `<div class="slot"><div><span class="date">${formatDate(d)}</span> <span class="shift">— ${shifts}</span></div><span class="count">${count} signed up</span></div>`;
+    }).join('');
+    document.getElementById('open-slots').style.display = 'block';
+  } catch (e) { console.error('Failed to load slots:', e); }
 }
 
 function formatDate(d) {
@@ -204,7 +228,7 @@ function formatDate(d) {
   return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-function submitSignup() {
+async function submitSignup() {
   const name = document.getElementById('v-name').value.trim();
   const date = document.getElementById('v-date').value;
   const shift = document.getElementById('v-shift').value;
@@ -213,31 +237,27 @@ function submitSignup() {
 
   if (!name || !date) return alert('Please enter your name and pick a date.');
 
-  const vols = getVolunteers();
-
-  const taken = vols.find(v => v.date === date && v.shift === shift);
-  if (taken) return alert(`That shift is already taken by ${taken.name}. Please pick a different date or shift.`);
-
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  vols.push({ id, name, date, shift, phone, email });
-  setVolunteers(vols);
-  localStorage.setItem('yss_volunteer_signed_up', 'true');
 
-  document.getElementById('signup-form').style.display = 'none';
-  document.getElementById('success-msg').style.display = 'block';
-  document.getElementById('confirm-detail').textContent =
-    `${name} — ${formatDate(date)}, ${shift}. Thank you for volunteering!`;
+  try {
+    await sbFetch('volunteers', {
+      method: 'POST',
+      body: JSON.stringify({ id, name, date, shift, phone, email })
+    });
 
-  showUpcomingSlots();
-}
-
-function resetForm() {
-  document.getElementById('signup-form').style.display = 'block';
-  document.getElementById('success-msg').style.display = 'none';
-  document.getElementById('v-name').value = '';
-  document.getElementById('v-phone').value = '';
-  document.getElementById('v-email').value = '';
-  document.getElementById('v-date').value = today;
+    localStorage.setItem('yss_volunteer_signed_up', 'true');
+    document.getElementById('signup-form').style.display = 'none';
+    document.getElementById('success-msg').style.display = 'block';
+    document.getElementById('confirm-detail').textContent =
+      `${name} — ${formatDate(date)}, ${shift}. Thank you for volunteering!`;
+    showUpcomingSlots();
+  } catch (e) {
+    if (e.message && e.message.includes('duplicate') || e.message.includes('unique')) {
+      alert('That shift is already taken! Please pick a different date or shift.');
+    } else {
+      alert('Error signing up: ' + e.message);
+    }
+  }
 }
 
 if (localStorage.getItem('yss_volunteer_signed_up')) {
